@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <ApplicationIcon />
+    <OutputType>Library</OutputType>
+    <StartupObject />
+    <Authors>Picalines</Authors>
+    <Company />
+    <Product />
+    <Description>string tokenizer library</Description>
+    <PackageId>PicTokenizer</PackageId>
+    <AssemblyName>PicTokenizer</AssemblyName>
+  </PropertyGroup>
+
+</Project>
