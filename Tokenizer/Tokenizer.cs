@@ -5,9 +5,9 @@ using System.Text.RegularExpressions;
 
 namespace PicTokenizer
 {
-    public sealed class Tokenizer<T>
+    public class Tokenizer<T>
     {
-        private class TokenDefinition
+        protected class TokenDefinition
         {
             public readonly T type;
             private readonly Regex regex;
@@ -21,14 +21,26 @@ namespace PicTokenizer
             public MatchCollection GetMatches(string input) => regex.Matches(input);
         }
 
-        private readonly List<TokenDefinition> tokenDefinitions = new List<TokenDefinition>();
+        protected bool InverseAdd { get; private set; }
+        protected readonly List<TokenDefinition> tokenDefinitions;
+
+        public Tokenizer()
+        {
+            tokenDefinitions = new List<TokenDefinition>();
+            InverseAdd = false;
+        }
+
+        public Tokenizer(bool inverseAdd) : this()
+        {
+            InverseAdd = inverseAdd;
+        }
 
         public Tokenizer<T> WithToken(T type, params string[] regexes)
         {
-            foreach (string regex in regexes)
-            {
-                tokenDefinitions.Add(new TokenDefinition(type, regex));
-            }
+            if (InverseAdd)
+                foreach (string regex in regexes) tokenDefinitions.Insert(0, new TokenDefinition(type, regex));
+            else
+                foreach (string regex in regexes) tokenDefinitions.Add(new TokenDefinition(type, regex));
             return this;
         }
 
@@ -48,7 +60,7 @@ namespace PicTokenizer
             return tokens.OrderBy(t => t.position).ToArray();
         }
 
-        private static IEnumerable<IToken<T>> TokenizeInternal(string input, bool[] occupied, TokenDefinition tokenDefinition)
+        protected static IEnumerable<IToken<T>> TokenizeInternal(string input, bool[] occupied, TokenDefinition tokenDefinition)
         {
             foreach (Match match in tokenDefinition.GetMatches(input))
             {
