@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace PicTokenizer
 {
-    public class Tokenizer<T>
+    public class Tokenizer<T> : ICloneable where T : IComparable<T>
     {
         protected class TokenDefinition
         {
@@ -24,14 +24,15 @@ namespace PicTokenizer
         protected bool InverseAdd { get; private set; }
         protected readonly List<TokenDefinition> tokenDefinitions;
 
-        public Tokenizer()
+        public Tokenizer(bool inverseAdd = false)
         {
             tokenDefinitions = new List<TokenDefinition>();
-            InverseAdd = false;
+            InverseAdd = inverseAdd;
         }
 
-        public Tokenizer(bool inverseAdd) : this()
+        private Tokenizer(IEnumerable<TokenDefinition> tokenDefinitions, bool inverseAdd)
         {
+            this.tokenDefinitions = new List<TokenDefinition>(tokenDefinitions);
             InverseAdd = inverseAdd;
         }
 
@@ -41,6 +42,19 @@ namespace PicTokenizer
                 foreach (string regex in regexes) tokenDefinitions.Insert(0, new TokenDefinition(type, regex));
             else
                 foreach (string regex in regexes) tokenDefinitions.Add(new TokenDefinition(type, regex));
+            return this;
+        }
+
+        public Tokenizer<T> WithoutToken(T type)
+        {
+            foreach (TokenDefinition td in tokenDefinitions)
+            {
+                if (td.type.CompareTo(type) == 0)
+                {
+                    tokenDefinitions.Remove(td);
+                    return this;
+                }
+            }
             return this;
         }
 
@@ -75,6 +89,11 @@ namespace PicTokenizer
 
                 yield return new Token<T>(tokenDefinition.type, match.Value, match.Index);
             }
+        }
+
+        public object Clone()
+        {
+            return new Tokenizer<T>(tokenDefinitions, InverseAdd);
         }
     }
 }
