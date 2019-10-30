@@ -5,70 +5,57 @@ using System;
 
 namespace PicTokenizer
 {
-    public class Tokenizer : ICloneable
+    public interface IReadOnlyTokenizer : ICloneable
     {
-        protected class TokenDefinition
-        {
-            public readonly string type;
-            private readonly Regex regex;
+        IEnumerable<Token> Tokenize(string input);
+    }
 
-            public TokenDefinition(string type, string regex)
-            {
-                this.type = type;
-                this.regex = new Regex(regex, RegexOptions.Compiled);
-            }
-
-            public TokenDefinition(KeyValuePair<string, string> def) : this(def.Key, def.Value) { }
-
-            public MatchCollection GetMatches(string input) => regex.Matches(input);
-        }
-
-        protected bool InverseAdd { get; private set; }
+    public class Tokenizer : IReadOnlyTokenizer
+    {
         protected readonly List<TokenDefinition> tokenDefinitions;
 
-        public Tokenizer(bool inverseAdd = false)
+        public Tokenizer()
         {
-            InverseAdd = inverseAdd;
             tokenDefinitions = new List<TokenDefinition>();
         }
 
-        public Tokenizer(Dictionary<string, string> tokenDefinitions, bool inverseAdd = false) : this(inverseAdd)
+        public Tokenizer(Dictionary<string, string> tokenDefinitions, bool inverseAdd = false) : this()
         {
             foreach (var def in tokenDefinitions)
             {
-                WithToken(def);
+                WithToken(def, inverseAdd);
             }
         }
 
-        private Tokenizer(IEnumerable<TokenDefinition> tokenDefinitions, bool inverseAdd)
+        private Tokenizer(IEnumerable<TokenDefinition> tokenDefinitions)
         {
-            InverseAdd = inverseAdd;
             this.tokenDefinitions = new List<TokenDefinition>(tokenDefinitions);
         }
 
-        public Tokenizer WithToken(string type, string regex)
+        public Tokenizer WithToken(string type, string regex, bool inverseAdd = false)
         {
-            if (InverseAdd)
+            if (inverseAdd)
                 tokenDefinitions.Insert(0, new TokenDefinition(type, regex));
             else
                 tokenDefinitions.Add(new TokenDefinition(type, regex));
             return this;
         }
 
-        public Tokenizer WithToken(KeyValuePair<string, string> tokenDefinition)
+        public Tokenizer WithToken(KeyValuePair<string, string> tokenDefinition, bool inverseAdd = false)
         {
-            if (InverseAdd)
-                tokenDefinitions.Insert(0, new TokenDefinition(tokenDefinition));
-            else
-                tokenDefinitions.Add(new TokenDefinition(tokenDefinition));
-            return this;
+            return WithToken(tokenDefinition.Key, tokenDefinition.Value, inverseAdd);
+        }
+
+        public Tokenizer WithToken(TokenDefinition tokenDefinition, bool inverseAdd = false)
+        {
+            return WithToken(tokenDefinition.Type, tokenDefinition.Regex.ToString(), inverseAdd);
         }
 
         public Tokenizer WithoutToken(string type)
         {
             foreach (TokenDefinition td in tokenDefinitions)
             {
-                if (td.type == type)
+                if (td.Type == type)
                 {
                     tokenDefinitions.Remove(td);
                     return this;
@@ -95,7 +82,7 @@ namespace PicTokenizer
 
         protected static IEnumerable<Token> TokenizeInternal(string input, bool[] occupied, TokenDefinition tokenDefinition)
         {
-            foreach (Match match in tokenDefinition.GetMatches(input))
+            foreach (Match match in tokenDefinition.Regex.Matches(input))
             {
                 if (!match.Success)
                     continue;
@@ -106,13 +93,13 @@ namespace PicTokenizer
 
                 indexRange.ForEach(idx => occupied[idx] = true);
 
-                yield return new Token(tokenDefinition.type, match.Value, match.Index);
+                yield return new Token(tokenDefinition.Type, match.Value, match.Index);
             }
         }
 
         public object Clone()
         {
-            return new Tokenizer(tokenDefinitions, InverseAdd);
+            return new Tokenizer(tokenDefinitions);
         }
     }
 }
