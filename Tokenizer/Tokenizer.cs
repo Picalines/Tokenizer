@@ -7,12 +7,15 @@ namespace PicTokenizer
 {
     public interface IReadOnlyTokenizer : ICloneable
     {
-        IEnumerable<Token> Tokenize(string input);
+        IReadOnlyList<Token> Tokenize(string input);
+        IReadOnlyList<TokenDefinition> TokenDefinitions { get; }
     }
 
     public class Tokenizer : IReadOnlyTokenizer
     {
         protected readonly List<TokenDefinition> tokenDefinitions;
+
+        public IReadOnlyList<TokenDefinition> TokenDefinitions => tokenDefinitions;
 
         public Tokenizer()
         {
@@ -64,7 +67,7 @@ namespace PicTokenizer
             return this;
         }
 
-        public IEnumerable<Token> Tokenize(string input)
+        public IReadOnlyList<Token> Tokenize(string input)
         {
             bool[] occupied = new bool[input.Length];
             List<Token> tokens = new List<Token>();
@@ -78,6 +81,11 @@ namespace PicTokenizer
             }
 
             return tokens.OrderBy(t => t.Position).ToArray();
+        }
+
+        public IReadOnlyList<IReadOnlyToken> TokenizeReadOnly(string input)
+        {
+            return Tokenize(input);
         }
 
         protected static IEnumerable<Token> TokenizeInternal(string input, bool[] occupied, TokenDefinition tokenDefinition)
