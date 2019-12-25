@@ -67,6 +67,15 @@ namespace PicTokenizer
             return this;
         }
 
+        public bool ContainsToken(string type)
+        {
+            foreach (TokenDefinition def in tokenDefinitions)
+            {
+                if (def.Type == type) return true;
+            }
+            return false;
+        }
+
         public IReadOnlyList<Token> Tokenize(string input)
         {
             bool[] occupied = new bool[input.Length];
