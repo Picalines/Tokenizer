@@ -1,21 +1,12 @@
 ﻿using System.Text.RegularExpressions;
-using System.Collections.Generic;
-using System;
 
 namespace PicTokenizer
 {
-    public interface IReadOnlyToken : ICloneable
+    public class Token
     {
-        string Type { get; }
-        string Value { get; }
-        int Position { get; }
-    }
-
-    public class Token : IReadOnlyToken
-    {
-        public string Type  { get; }
-        public string Value { get; set; }
-        public int Position { get; set; }
+        public readonly string Type;
+        public readonly string Value;
+        public readonly int Position;
 
         public Token(string type, string value, int position)
         {
@@ -28,108 +19,27 @@ namespace PicTokenizer
         {
             return Value;
         }
-
-        public object Clone()
-        {
-            return new Token(Type, Value, Position);
-        }
-
-        public static implicit operator bool(Token token)
-        {
-            return token != null;
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (obj is Token b)
-            {
-                return this == b;
-            }
-            return false;
-        }
-
-        public override int GetHashCode()
-        {
-            return base.GetHashCode();
-        }
-
-        public static bool operator ==(Token a, Token b)
-        {
-            if (a is null && b is null)
-            {
-                return true;
-            }
-            else if (a is null || b is null)
-            {
-                return false;
-            }
-            return a.Type == b.Type && a.Value == b.Value && a.Position == b.Position;
-        }
-
-        public static bool operator !=(Token a, Token b)
-        {
-            return !(a == b);
-        }
     }
 
-    public class TokenDefinition : ICloneable
+    public class TokenDefinition
     {
         public string Type { get; }
         public Regex Regex { get; }
 
-        public TokenDefinition(string type, string regex)
+        public TokenDefinition(string type, string regex, RegexOptions options = RegexOptions.Compiled)
         {
             Type = type;
-            Regex = new Regex(regex, RegexOptions.Compiled);
+            Regex = new Regex(regex, options);
         }
 
-        public TokenDefinition(KeyValuePair<string, string> def) : this(def.Key, def.Value) { }
-
-        public override string ToString()
+        public static implicit operator TokenDefinition((string type, string regex) def)
         {
-            return Type;
+            return new TokenDefinition(def.type, def.regex);
         }
 
-        public object Clone()
+        public static implicit operator TokenDefinition((string type, string regex, RegexOptions options) def)
         {
-            return new TokenDefinition(Type, Regex.ToString());
-        }
-
-        public static implicit operator TokenDefinition((string Type, string Regex) tokenDefinition)
-        {
-            return new TokenDefinition(tokenDefinition.Type, tokenDefinition.Regex);
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (obj is TokenDefinition b)
-            {
-                return this == b;
-            }
-            return false;
-        }
-
-        public override int GetHashCode()
-        {
-            return base.GetHashCode();
-        }
-
-        public static bool operator ==(TokenDefinition a, TokenDefinition b)
-        {
-            if (a == null && b == null)
-            {
-                return true;
-            }
-            else if (a == null || b == null)
-            {
-                return false;
-            }
-            return a.Type == b.Type && a.Regex == b.Regex;
-        }
-
-        public static bool operator !=(TokenDefinition a, TokenDefinition b)
-        {
-            return !(a == b);
+            return new TokenDefinition(def.type, def.regex, def.options);
         }
     }
 }

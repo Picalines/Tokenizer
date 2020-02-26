@@ -1,87 +1,24 @@
 ﻿using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using System.Linq;
-using System;
 
 namespace PicTokenizer
 {
-    public interface IReadOnlyTokenizer : ICloneable
+    public class Tokenizer
     {
-        IReadOnlyList<Token> Tokenize(string input);
-        IReadOnlyList<TokenDefinition> TokenDefinitions { get; }
-    }
+        public readonly TokenDefinition[] TokenDefinitions;
 
-    public class Tokenizer : IReadOnlyTokenizer
-    {
-        protected readonly List<TokenDefinition> tokenDefinitions;
-
-        public IReadOnlyList<TokenDefinition> TokenDefinitions => tokenDefinitions;
-
-        public Tokenizer()
+        public Tokenizer(params TokenDefinition[] tokenDefinitions)
         {
-            tokenDefinitions = new List<TokenDefinition>();
+            TokenDefinitions = tokenDefinitions;
         }
 
-        public Tokenizer(Dictionary<string, string> tokenDefinitions, bool inverseAdd = false) : this()
-        {
-            foreach (var def in tokenDefinitions)
-            {
-                WithToken(def, inverseAdd);
-            }
-        }
-
-        private Tokenizer(IEnumerable<TokenDefinition> tokenDefinitions)
-        {
-            this.tokenDefinitions = new List<TokenDefinition>(tokenDefinitions);
-        }
-
-        public Tokenizer WithToken(string type, string regex, bool inverseAdd = false)
-        {
-            if (inverseAdd)
-                tokenDefinitions.Insert(0, new TokenDefinition(type, regex));
-            else
-                tokenDefinitions.Add(new TokenDefinition(type, regex));
-            return this;
-        }
-
-        public Tokenizer WithToken(KeyValuePair<string, string> tokenDefinition, bool inverseAdd = false)
-        {
-            return WithToken(tokenDefinition.Key, tokenDefinition.Value, inverseAdd);
-        }
-
-        public Tokenizer WithToken(TokenDefinition tokenDefinition, bool inverseAdd = false)
-        {
-            return WithToken(tokenDefinition.Type, tokenDefinition.Regex.ToString(), inverseAdd);
-        }
-
-        public Tokenizer WithoutToken(string type)
-        {
-            foreach (TokenDefinition td in tokenDefinitions)
-            {
-                if (td.Type == type)
-                {
-                    tokenDefinitions.Remove(td);
-                    return this;
-                }
-            }
-            return this;
-        }
-
-        public bool ContainsToken(string type)
-        {
-            foreach (TokenDefinition def in tokenDefinitions)
-            {
-                if (def.Type == type) return true;
-            }
-            return false;
-        }
-
-        public IReadOnlyList<Token> Tokenize(string input)
+        public Token[] Tokenize(string input)
         {
             bool[] occupied = new bool[input.Length];
             List<Token> tokens = new List<Token>();
 
-            foreach (TokenDefinition definition in tokenDefinitions)
+            foreach (TokenDefinition definition in TokenDefinitions)
             {
                 foreach (Token token in TokenizeInternal(input, occupied, definition))
                 {
@@ -92,12 +29,7 @@ namespace PicTokenizer
             return tokens.OrderBy(t => t.Position).ToArray();
         }
 
-        public IReadOnlyList<IReadOnlyToken> TokenizeReadOnly(string input)
-        {
-            return Tokenize(input);
-        }
-
-        protected static IEnumerable<Token> TokenizeInternal(string input, bool[] occupied, TokenDefinition tokenDefinition)
+        private static IEnumerable<Token> TokenizeInternal(string input, bool[] occupied, TokenDefinition tokenDefinition)
         {
             foreach (Match match in tokenDefinition.Regex.Matches(input))
             {
@@ -112,11 +44,6 @@ namespace PicTokenizer
 
                 yield return new Token(tokenDefinition.Type, match.Value, match.Index);
             }
-        }
-
-        public object Clone()
-        {
-            return new Tokenizer(tokenDefinitions);
         }
     }
 }
