@@ -1,6 +1,7 @@
 ﻿using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using System.Linq;
+using System;
 
 namespace PicTokenizer
 {
@@ -10,6 +11,10 @@ namespace PicTokenizer
 
         public Tokenizer(params TokenDefinition[] tokenDefinitions)
         {
+            if (tokenDefinitions is null || tokenDefinitions.Length == 0)
+            {
+                throw new ArgumentException($"{nameof(tokenDefinitions)} is null or empty");
+            }
             TokenDefinitions = tokenDefinitions;
         }
 
